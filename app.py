@@ -3,10 +3,13 @@ import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
 from dotenv import load_dotenv
+from mysql.connector import Error
+from flask_bcrypt import Bcrypt
 import os
 
 app = Flask(__name__)
 CORS(app)  # Sta cross-origin requests toe
+bcrypt = Bcrypt(app)
 
 # Configuratie voor de MySQL-databaseverbinding
 db_config = {
@@ -118,7 +121,24 @@ def get_result_by_id(result_id):
         return jsonify(response)
     except Error as e:
         print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 50
+    
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data['email']
+    wachtwoord = data['wachtwoord']
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    cursor.close()
+
+    if user and bcrypt.check_password_hash(user[3], wachtwoord):
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'message': 'Invalid email or password'}), 401
 
 if __name__ == '__main__':
     app.run(port=5000)  # Start de Flask server op poort 5000
