@@ -128,17 +128,26 @@ def login():
     data = request.get_json()
     email = data['email']
     wachtwoord = data['wachtwoord']
+    personeelsnummer = data['personeelsnummer']
 
-    conn = mysql.connection
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
-    cursor.close()
+    conn = mysql.connector.connect(**db_config)
+    if conn is None:
+        return jsonify({'message': 'Database connection failed'}), 500
 
-    if user and bcrypt.check_password_hash(user[3], wachtwoord):
-        return jsonify({'message': 'Login successful'}), 200
-    else:
-        return jsonify({'message': 'Invalid email or password'}), 401
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE email = %s AND personeelsnummer = %s", (email, personeelsnummer))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if user and bcrypt.check_password_hash(user[3], wachtwoord):
+            return jsonify({'message': 'Login successful'}), 200
+        else:
+            return jsonify({'message': 'Invalid email, personeelsnummer, or password'}), 401
+    except Error as e:
+        print(f"Error during query execution: {e}")
+        return jsonify({'message': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     app.run(port=5000)  # Start de Flask server op poort 5000
