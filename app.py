@@ -2,17 +2,34 @@ from flask import Flask, jsonify
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 CORS(app)  # Sta cross-origin requests toe
 
 # Configuratie voor de MySQL-databaseverbinding
 db_config = {
-    'user': 'root',
-    'password': 'Kanker123!',  # Wijzig dit naar het wachtwoord van je MySQL-database
+    'user': 'admin',
+    'password': 'geheim',  # Wijzig dit naar het wachtwoord van je MySQL-database
     'host': 'localhost',
-    'database': 'jdb'  # Wijzig dit naar de naam van je MySQL-database
+    'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
+
+@app.route('/api/patients', methods=['GET'])
+def get_patients():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, first_name, last_name, birth_date, gender FROM patient")
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(results)
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/results', methods=['GET'])
 def get_results():
