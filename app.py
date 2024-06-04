@@ -3,20 +3,26 @@ import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
 
+# Initialiseer de Flask applicatie
 app = Flask(__name__)
 CORS(app)  # Sta cross-origin requests toe
 
 # Configuratie voor de MySQL-databaseverbinding
 db_config = {
     'user': 'root',
-    'password': 'Kanker123!',  # Wijzig dit naar het wachtwoord van je MySQL-database
+    'password': 'Pipodeclown123',  # Wijzig dit naar het wachtwoord van je MySQL-database
     'host': 'localhost',
-    'database': 'jdb'  # Wijzig dit naar de naam van je MySQL-database
+    'database': 'jbd2'  # Wijzig dit naar de naam van je MySQL-database
 }
 
+# Route voor de startpagina
+@app.route('/')
+def index():
+    return "Welkom bij mijn applicatie!"
+
+# Route om alle resultaten op te halen
 @app.route('/api/results', methods=['GET'])
 def get_results():
-    """Haalt alle resultaten op uit de database"""
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
@@ -29,13 +35,11 @@ def get_results():
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Route om een specifiek resultaat op te halen op basis van ID
 @app.route('/api/results/<int:result_id>', methods=['GET'])
 def get_result_by_id(result_id):
-    """Haalt een specifiek resultaat op uit de database op basis van ID"""
     try:
         conn = mysql.connector.connect(**db_config)
-        
-        # Gebruik een aparte cursor voor elke query
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM results WHERE id = %s", (result_id,))
         result = cursor.fetchone()
@@ -45,17 +49,16 @@ def get_result_by_id(result_id):
             conn.close()
             return jsonify({"error": "Result not found"}), 404
         
-        # Initialiseert de responsstructuur
+        # Initialiseer de responsstructuur
         response = {
             "id": result["id"],
             "name": result["name"],
             "type": result["type"],
-            "date": result["date"].strftime('%Y-%m-%d %H:%M:%S'),  # Formatteert datetime naar string
+            "date": result["date"].strftime('%Y-%m-%d %H:%M:%S'),
             "details": {},
             "blood_chemistry": []
         }
 
-        # Haalt details op gebaseerd op het result type
         if result['type'] == 'Radiologie':
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT * FROM radiology_results WHERE result_id = %s", (result_id,))
@@ -84,7 +87,6 @@ def get_result_by_id(result_id):
             conn.close()
             return jsonify({"error": "Unknown result type"}), 400
 
-        # Haalt bloedchemie resultaten op
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM blood_chemistry_results WHERE result_id = %s", (result_id,))
         blood_chemistry_results = cursor.fetchall()
@@ -103,5 +105,57 @@ def get_result_by_id(result_id):
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Route om alle patiënten op te halen
+@app.route('/api/patients', methods=['GET'])
+def get_patients():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM patient")
+        patients = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(patients)
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Route om een specifieke patiënt op te halen op basis van ID
+@app.route('/api/patients/<int:patient_id>', methods=['GET'])
+def get_patient_by_id(patient_id):
+    try:
+        print(f"Fetching patient with ID: {patient_id}")
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM patient WHERE PatientId = %s", (patient_id,))
+        patient = cursor.fetchone()
+        cursor.close()
+        
+        if not patient:
+            print("Patient not found")
+            conn.close()
+            return jsonify({"error": "Patient not found"}), 404
+        
+        # Print de sleutels van het resultaat om te debuggen
+        print("Patient keys:", patient.keys())
+
+        response = {
+            "PatientId": patient["PatientId"],
+            "PatientVoornaam": patient["PatientVoornaam"],
+            "PatientAchternaam": patient["PatientAchternaam"],
+            "PatientGeboortedatum": patient["PatientGeboortedatum"].strftime('%Y-%m-%d'),
+            "PatientGeslacht": patient["PatientGeslacht"],
+            "PatientDiagnose": patient["PatientDiagnose"],
+            "PatientContactpersoon": patient["PatientContactpersoon"],
+            "PatientContactpersoontelefoonnummer": patient["PatientContactpersoontelefoonnummer"]  # Voeg de ontbrekende kolom toe
+        }
+        
+        conn.close()
+        return jsonify(response)
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Start de Flask server
 if __name__ == '__main__':
-    app.run(port=5000)  # Start de Flask server op poort 5000
+    app.run(port=5000)
