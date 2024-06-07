@@ -3,7 +3,6 @@ import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
 from dotenv import load_dotenv
-from mysql.connector import Error
 from flask_bcrypt import Bcrypt
 import os
 
@@ -21,6 +20,7 @@ db_config = {
 
 @app.route('/api/patients', methods=['GET'])
 def get_patients():
+    """Haalt patienten op uit database"""
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
@@ -125,6 +125,7 @@ def get_result_by_id(result_id):
     
 @app.route('/login', methods=['POST'])
 def login():
+    """controleerd inloggegevens met database gegevens"""
     data = request.get_json()
     email = data['email']
     wachtwoord = data['wachtwoord']
