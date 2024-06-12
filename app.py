@@ -123,7 +123,7 @@ def get_result_by_id(result_id):
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 50
     
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET'])
 def login():
     """controleerd inloggegevens met database gegevens"""
     data = request.get_json()
@@ -149,6 +149,24 @@ def login():
     except Error as e:
         print(f"Error during query execution: {e}")
         return jsonify({'message': 'Internal server error'}), 500
-
+    
+@app.route('/homepage', methods=['GET'])
+def get_appointments():
+    """Haalt afspraken op uit database"""
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        searchphrase = request.get_json()
+        query = SELECT * FROM Appointments WHERE COLLUMN LIKE %s OR COLLUMN LIKE %s .... 
+        parameters = (searchphrase, searchphrase, ....)
+        cursor.execute(query, parameters)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(results)
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(port=5000)  # Start de Flask server op poort 5000
