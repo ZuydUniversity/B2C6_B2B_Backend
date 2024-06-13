@@ -22,6 +22,7 @@ jobs:
         pip install flask-cors
         pip install flask-mysqldb
         pip install mysql-connector-python-rf
+        pip install Flask-Bcrypt
         pip install python-dotenv
         pip install wheel
     - name: Analysing the code with pylint
