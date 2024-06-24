@@ -156,9 +156,18 @@ def get_appointments():
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
-        searchphrase = request.get_json()
-        query = SELECT * FROM Appointments WHERE COLLUMN LIKE %s OR COLLUMN LIKE %s .... 
-        parameters = (searchphrase, searchphrase, ....)
+        searchphrase = request.args.get('searchphrase', '')
+        searchphrase = f"%{searchphrase}%"
+        query = """SELECT a.*, p.name AS patient_name 
+        FROM appointments a
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.id LIKE %s 
+        OR a.datetime LIKE %s 
+        OR a.patient_id LIKE %s 
+        OR a.doctor_id LIKE %s 
+        OR a.duration LIKE %s
+        OR p.name LIKE %s"""
+        parameters = (searchphrase, searchphrase, searchphrase, searchphrase, searchphrase, searchphrase)
         cursor.execute(query, parameters)
         results = cursor.fetchall()
         cursor.close()
