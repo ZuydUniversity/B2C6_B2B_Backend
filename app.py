@@ -149,6 +149,33 @@ def login():
     except Error as e:
         print(f"Error during query execution: {e}")
         return jsonify({'message': 'Internal server error'}), 500
-
+    
+@app.route('/homepage', methods=['GET'])
+def get_appointments():
+    """Haalt afspraken op uit database"""
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        searchphrase = request.args.get('searchphrase', '')
+        searchphrase = f"%{searchphrase}%"
+        query = """SELECT a.*, p.name AS patient_name 
+        FROM appointments a
+        JOIN patient p ON a.patient_id = p.id
+        WHERE a.id LIKE %s 
+        OR a.datetime LIKE %s 
+        OR a.patient_id LIKE %s 
+        OR a.doctor_id LIKE %s 
+        OR a.duration LIKE %s
+        OR p.name LIKE %s"""
+        parameters = (searchphrase, searchphrase, searchphrase, searchphrase, searchphrase, searchphrase)
+        cursor.execute(query, parameters)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify(results)
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(port=5000)  # Start de Flask server op poort 5000
