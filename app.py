@@ -123,7 +123,7 @@ def get_result_by_id(result_id):
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 50
     
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST'])
 def login():
     """controleerd inloggegevens met database gegevens"""
     data = request.get_json()
