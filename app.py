@@ -68,7 +68,6 @@ def get_result_by_id(result_id):
         # Initialiseert de responsstructuur
         response = {
             "id": result["id"],
-            "name": result["name"],
             "type": result["type"],
             "date": result["date"].strftime('%Y-%m-%d %H:%M:%S'),  # Formatteert datetime naar string
             "details": {},
@@ -128,8 +127,8 @@ def login():
     """controleerd inloggegevens met database gegevens"""
     data = request.get_json()
     email = data['email']
-    wachtwoord = data['wachtwoord']
-    personeelsnummer = data['personeelsnummer']
+    password = data['password']
+    employeeNumber = data['employeeNumber']
 
     conn = mysql.connector.connect(**db_config)
     if conn is None:
@@ -137,192 +136,18 @@ def login():
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = %s AND personeelsnummer = %s", (email, personeelsnummer))
+        cursor.execute("SELECT * FROM users WHERE email = %s AND employeeNumber = %s", (email, employeeNumber))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
 
-        if user and bcrypt.check_password_hash(user[3], wachtwoord):
+        if user and bcrypt.check_password_hash(user[3], password):
             return jsonify({'message': 'Login successful'}), 200
         else:
-            return jsonify({'message': 'Invalid email, personeelsnummer, or password'}), 401
+            return jsonify({'message': 'Invalid email, employeeNumber, or password'}), 401
     except Error as e:
         print(f"Error during query execution: {e}")
         return jsonify({'message': 'Internal server error'}), 500
-
-# Vanaf hier start de CRUD voor Notities
-@app.route('/api/notes', methods=['POST'])
-def create_note():
-    """Maak een nieuwe notitie aan"""
-    data = request.get_json()
-    patient_id = data['patient_id']
-    content = data['content']
-
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO notes (patient_id, content) VALUES (%s, %s)", (patient_id, content))
-        conn.commit()
-        note_id = cursor.lastrowid
-        cursor.close()
-        conn.close()
-        return jsonify({"id": note_id, "patient_id": patient_id, "content": content}), 201
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/notes', methods=['GET'])
-def get_notes():
-    """Haalt alle notities op"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM notes")
-        notes = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return jsonify(notes)
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/notes/<int:note_id>', methods=['GET'])
-def get_note_by_id(note_id):
-    """Haalt een specifieke notitie op"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
-        note = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if not note:
-            return jsonify({"error": "Note not found"}), 404
-        return jsonify(note)
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/notes/<int:note_id>', methods=['PUT'])
-def update_note(note_id):
-    """Update een bestaande notitie"""
-    data = request.get_json()
-    content = data['content']
-
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE notes SET content = %s WHERE id = %s", (content, note_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return jsonify({"id": note_id, "content": content}), 200
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/notes/<int:note_id>', methods=['DELETE'])
-def delete_note(note_id):
-    """Verwijder een notitie"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM notes WHERE id = %s", (note_id,))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return '', 204
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-# Vanaf hier Crud code voor Afbeeldingen
-@app.route('/api/images', methods=['POST'])
-def create_image():
-    """Upload een nieuwe afbeelding"""
-    data = request.get_json()
-    patient_id = data['patient_id']
-    file_path = data['file_path']  # Dit moet de bestandslocatie zijn waar je de afbeelding opslaat
-    description = data['description']
-
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO images (patient_id, file_path, description) VALUES (%s, %s, %s)", (patient_id, file_path, description))
-        conn.commit()
-        image_id = cursor.lastrowid
-        cursor.close()
-        conn.close()
-        return jsonify({"id": image_id, "patient_id": patient_id, "file_path": file_path, "description": description}), 201
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/images', methods=['GET'])
-def get_images():
-    """Haalt alle afbeeldingen op"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM images")
-        images = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return jsonify(images)
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/images/<int:image_id>', methods=['GET'])
-def get_image_by_id(image_id):
-    """Haalt een specifieke afbeelding op"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM images WHERE id = %s", (image_id,))
-        image = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if not image:
-            return jsonify({"error": "Image not found"}), 404
-        return jsonify(image)
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/images/<int:image_id>', methods=['PUT'])
-def update_image(image_id):
-    """Update een bestaande afbeelding"""
-    data = request.get_json()
-    file_path = data['file_path']
-    description = data['description']
-
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE images SET file_path = %s, description = %s WHERE id = %s", (file_path, description, image_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return jsonify({"id": image_id, "file_path": file_path, "description": description}), 200
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/images/<int:image_id>', methods=['DELETE'])
-def delete_image(image_id):
-    """Verwijder een afbeelding"""
-    try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM images WHERE id = %s", (image_id,))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return '', 204
-    except Error as e:
-        print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(port=5000)  # Start de Flask server op poort 5000

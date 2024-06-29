@@ -4,3 +4,5 @@ flask-mysqldb
 mysql-connector-python-rf
 python-dotenv
 wheel
+pytest
+flask-bcrypt
