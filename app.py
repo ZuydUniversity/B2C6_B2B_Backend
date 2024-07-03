@@ -15,6 +15,8 @@ db_config = {
     'user': 'admin',
     'password': 'geheim',  # Wijzig dit naar het wachtwoord van je MySQL-database
     'host': 'localhost',
+    'host': '20.73.242.86',
+    'port': 3306,
     'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
 
@@ -325,4 +327,4 @@ def delete_image(image_id):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5000)  # Start de Flask server op poort 5000
+    app.run(host='0.0.0.0',port=5000)  # Start de Flask server op poort 5000
