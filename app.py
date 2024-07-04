@@ -20,6 +20,51 @@ db_config = {
     'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
 
+
+# In-memory data storage
+data = {
+    "patient": {
+        "name": "Doe",
+        "first_name": "Joep",
+        "age": "10 jaar",
+        "gender": "Man",
+        "diagnosis": "Juveniele dermatomyositis",
+        "contact": {
+            "name": "John Doe",
+            "phone": "0612345678",
+            "email": "johndoe@mail.com"
+        }
+    },
+    "medication": [
+        {"name": "Enalaprilmal", "dose": "5mg", "use": "2x p/dag 1 tablet"},
+        {"name": "Cellcept", "dose": "500mg", "use": "2x p/dag 1 tablet"},
+        {"name": "Acecort", "dose": "5mg", "use": "2x per dag 1 tablet"},
+        {"name": "Amlodipine besilaat", "dose": "5mg tab.", "use": "2x p/dag 1 tablet"},
+        {"name": "Omecat", "dose": "20mg capsule msr", "use": "1x p/dag 1 capsule"},
+        {"name": "Forlax", "dose": "log sach pdv drank", "use": "1 p/dag 1 sakje"},
+        {"name": "Calci chew d3", "dose": "500mg/400ie tabl.", "use": "1 p/dag 1 tablet"},
+        {"name": "Cotrimoxazol pch", "dose": "240mg/5ml", "use": "1 p/dag, 3x p/week 8ml"}
+    ]
+}
+
+@app.route('/api/patient', methods=['GET'])
+def get_patient():
+    return jsonify(data['patient'])
+
+@app.route('/api/patient', methods=['PUT'])
+def update_patient():
+    data['patient'] = request.json
+    return jsonify(data['patient'])
+
+@app.route('/api/medication', methods=['GET'])
+def get_medication():
+    return jsonify(data['medication'])
+
+@app.route('/api/medication', methods=['PUT'])
+def update_medication():
+    data['medication'] = request.json
+    return jsonify(data['medication'])
+
 @app.route('/api/patients', methods=['GET'])
 def get_patients():
     """Haalt patienten op uit database"""
