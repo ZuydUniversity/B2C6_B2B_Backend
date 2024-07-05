@@ -15,7 +15,7 @@ db_config = {
     'user': 'admin',
     'password': 'geheim',  # Wijzig dit naar het wachtwoord van je MySQL-database
     'host': 'localhost',
-    'host': '20.73.242.86',
+    //'host': '20.73.242.86',
     'port': 3306,
     'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
