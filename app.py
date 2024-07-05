@@ -14,8 +14,7 @@ bcrypt = Bcrypt(app)
 db_config = {
     'user': 'admin',
     'password': 'geheim',  # Wijzig dit naar het wachtwoord van je MySQL-database
-    'host': 'localhost',
-    'host': '20.73.242.86',
+    'host': 'localhost',    # Wijzig dit naar je host vam je MySQL-database
     'port': 3306,
     'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
