@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
-from dotenv import load_dotenv
 from flask_bcrypt import Bcrypt
 import os
 
@@ -14,17 +13,21 @@ bcrypt = Bcrypt(app)
 db_config = {
     'user': 'admin',
     'password': 'geheim',  # Wijzig dit naar het wachtwoord van je MySQL-database
-    'host': 'localhost',
     'host': '20.73.242.86',
     'port': 3306,
     'database': 'casusdb'  # Wijzig dit naar de naam van je MySQL-database
 }
 
+def get_db_connection():
+    """Functie om een nieuwe databaseverbinding te krijgen"""
+    conn = mysql.connector.connect(**db_config)
+    return conn
+
 @app.route('/api/patients', methods=['GET'])
 def get_patients():
     """Haalt patienten op uit database"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT id, first_name, last_name, birth_date, gender FROM patient")
         results = cursor.fetchall()
@@ -35,12 +38,11 @@ def get_patients():
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/results', methods=['GET'])
 def get_results():
     """Haalt alle resultaten op uit de database"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM results")
         results = cursor.fetchall()
@@ -55,7 +57,7 @@ def get_results():
 def get_result_by_id(result_id):
     """Haalt een specifiek resultaat op uit de database op basis van ID"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         
         # Gebruik een aparte cursor voor elke query
         cursor = conn.cursor(dictionary=True)
@@ -123,21 +125,18 @@ def get_result_by_id(result_id):
         return jsonify(response)
     except Error as e:
         print(f"Error: {e}")
-        return jsonify({"error": str(e)}), 50
+        return jsonify({"error": str(e)}), 500
     
 @app.route('/login', methods=['POST'])
 def login():
-    """controleerd inloggegevens met database gegevens"""
+    """Controleert inloggegevens met databasegegevens"""
     data = request.get_json()
     email = data['email']
     wachtwoord = data['wachtwoord']
     personeelsnummer = data['personeelsnummer']
 
-    conn = mysql.connector.connect(**db_config)
-    if conn is None:
-        return jsonify({'message': 'Database connection failed'}), 500
-
     try:
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = %s AND personeelsnummer = %s", (email, personeelsnummer))
         user = cursor.fetchone()
@@ -161,7 +160,7 @@ def create_note():
     content = data['content']
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO notes (patient_id, content) VALUES (%s, %s)", (patient_id, content))
         conn.commit()
@@ -177,7 +176,7 @@ def create_note():
 def get_notes():
     """Haalt alle notities op"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM notes")
         notes = cursor.fetchall()
@@ -192,7 +191,7 @@ def get_notes():
 def get_note_by_id(note_id):
     """Haalt een specifieke notitie op"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM notes WHERE id = %s", (note_id,))
         note = cursor.fetchone()
@@ -212,7 +211,7 @@ def update_note(note_id):
     content = data['content']
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE notes SET content = %s WHERE id = %s", (content, note_id))
         conn.commit()
@@ -227,7 +226,7 @@ def update_note(note_id):
 def delete_note(note_id):
     """Verwijder een notitie"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM notes WHERE id = %s", (note_id,))
         conn.commit()
@@ -238,7 +237,7 @@ def delete_note(note_id):
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Vanaf hier Crud code voor Afbeeldingen
+# Vanaf hier CRUD code voor Afbeeldingen
 @app.route('/api/images', methods=['POST'])
 def create_image():
     """Upload een nieuwe afbeelding"""
@@ -248,7 +247,7 @@ def create_image():
     description = data['description']
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO images (patient_id, file_path, description) VALUES (%s, %s, %s)", (patient_id, file_path, description))
         conn.commit()
@@ -264,7 +263,7 @@ def create_image():
 def get_images():
     """Haalt alle afbeeldingen op"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM images")
         images = cursor.fetchall()
@@ -279,7 +278,7 @@ def get_images():
 def get_image_by_id(image_id):
     """Haalt een specifieke afbeelding op"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM images WHERE id = %s", (image_id,))
         image = cursor.fetchone()
@@ -296,17 +295,16 @@ def get_image_by_id(image_id):
 def update_image(image_id):
     """Update een bestaande afbeelding"""
     data = request.get_json()
-    file_path = data['file_path']
     description = data['description']
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE images SET file_path = %s, description = %s WHERE id = %s", (file_path, description, image_id))
+        cursor.execute("UPDATE images SET description = %s WHERE id = %s", (description, image_id))
         conn.commit()
         cursor.close()
         conn.close()
-        return jsonify({"id": image_id, "file_path": file_path, "description": description}), 200
+        return jsonify({"id": image_id, "description": description}), 200
     except Error as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -315,7 +313,7 @@ def update_image(image_id):
 def delete_image(image_id):
     """Verwijder een afbeelding"""
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM images WHERE id = %s", (image_id,))
         conn.commit()
@@ -327,4 +325,4 @@ def delete_image(image_id):
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000)  # Start de Flask server op poort 5000
+    app.run(debug=True)
